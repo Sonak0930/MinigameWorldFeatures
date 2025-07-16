@@ -1,10 +1,10 @@
 # Zepeto World Features
 
-This is a demo description of project features for Zepeto World.
+This is a demo description of project features for Mini-game World.
 Unfortunately, the project file cannot be attached due to a security issue.
 The files are attached from the project.
 
-> 이 프로젝트는 제페토 월드에 사용된 데모 기능들을 설명한 문서입니다.
+> 이 프로젝트는 미니게임 월드에 사용된 데모 기능들을 설명한 문서입니다.
 > 대외비 문제로 인해 프로젝트 소스코드는 업로드 하지 못했습니다.
 > 대신에 프로젝트에 사용했던 개발 문서와 사진, 영상자료를 첨부했습니다.
 >
@@ -87,6 +87,7 @@ I tried to find a source code for rotation, but there was no resources left.
 > 물체를 회전시키는 코드는, 개발노트에 코드를 첨부하지 않아서 찾지 못했고, 영상만 첨부했습니다.
 
 - Result
+- 
 https://github.com/user-attachments/assets/8505f4b9-a353-46a4-8a05-d277fce99d11
 
 
@@ -171,3 +172,94 @@ Raining and Smoke effect are also added for more details, using Particle System.
 
 > 유니티 파티클 시스템을 활용해 비 내리는 효과와 매연 효과를 추가해서, 더욱 재미있게 연출했습니다.
 
+
+## Exploring the whole map with bird-view camera
+
+<img width="640" height="406" alt="image" src="https://github.com/user-attachments/assets/dc8226e2-1226-4564-b799-c9ccc02817d7" />
+
+There was a telescope which player can interact with to explore the whole map.
+The Player camera started to move along the path while getting tilted.
+The camera follows the pre-defined pivots in a very smooth movement.
+
+> 플레이어들이 맵을 한 눈에 담을 수 있도록, 망원경을 구현했습니다.
+> 망원경의 움직임은 미리 지정한 pivot을 따라 움직이고, 부드러운 곡선을 그리도록 만들었습니다.
+
+```
+//C#
+Init()
+{
+    for (let i = 0; i < this.pivotParent.transform.childCount; i++)
+    {
+        var childtransform = this.pivotParent.transform.GetChild(i);
+        pivots.push(childtransform);
+
+        this.transform.position - pivots[0].position;
+        this.transform.rotation = pivots[0].rotation;
+    }
+}
+Update() {
+    if (!this.stop)
+        this.MoveCamera();
+}
+```
+
+This process is similar to NavPathfinding, using pre-defined pivots in a children list.
+
+> 위에서 vehicle 회전에 사용한 것처럼 미리 피벗을 생성해 children으로 넣어줬습니다.
+
+```
+//C#
+MoveCamera() 
+{
+    if (pivots == undefined)
+    {
+        this.Init();
+        console.log("index " + index);
+        var distance = Vector3.Distance(this.transform.position, pivots[index].position);
+
+        //if it gets close enough,
+        if (distance < 10)
+        {
+            if (index + 1 == pivots.length)
+            {
+                //clear index
+                index = 0;
+            }
+            else
+            {
+                index += 1;
+            }
+        }
+        else
+        {
+            var nextPos = Vector3.Slerp(this.transform.position, pivots[index].position, this.slerpSpeed);
+            var nextRot = Quaternion.Slerp(this.transform.rotation, pivots[index].rotation, this.slerpSpeed);
+            this.transform.position = nextPos;
+            this.transform.rotation = nextRot;
+        } 
+    }
+}
+
+```
+
+The distintive point is that it interpolates between to pivots using Slerp(Spherical Linear Interpolation) 
+for both of position and rotation.
+
+> 특이점은 Position과 Rotation을 보간할 때 선형(Linear)이 아니라, Spherical Linear Interpolation을 사용합니다.
+
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/c52e53e0-cd8a-4eef-9a57-ad7d5996e6a4" />
+
+- Path using Lerp
+Camera path has some sharp corners when transition to next pivot location.
+
+
+> - Lerp를 사용한 경로
+> 카메라의 경로가 뚝뚝 끊기는 것처럼 부자연스럽습니다.
+
+<img width="400" height="400" alt="image" src="https://github.com/user-attachments/assets/e6c5ae12-1190-4760-b96f-bef8c1a7e740" />
+
+- Path using Slerp
+Camera shows more smooth transition for position and rotation.
+
+> - Slerp를 사용한 경우
+> 훨씬 더 부드러운 곡선 경로를 그리는 것을 볼 수 있습니다.
