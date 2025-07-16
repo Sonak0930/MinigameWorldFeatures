@@ -67,7 +67,9 @@ https://github.com/user-attachments/assets/105ee38d-9af5-48c6-b095-eee0c950591d
 
 <br></br>
 
-## Circular Orbit-Rotation of the vehicle.
+## Pathfinding using Unity AI: NavMeshAgent
+
+### Orbit-Rotation
 
 There was a requirement for the vehicle which orbits around the center of the map with some distance.
 It required to consideration:
@@ -80,4 +82,92 @@ It required to consideration:
 > - 탈것이 바라보는 방향과 공전 움직임을 어떻게 맞물리는가?
 
 
+I tried to find a source code for rotation, but there was no resources left.
+
+> 물체를 회전시키는 코드는, 개발노트에 코드를 첨부하지 않아서 찾지 못했고, 영상만 첨부했습니다.
+
+- Result
+https://github.com/user-attachments/assets/8505f4b9-a353-46a4-8a05-d277fce99d11
+
+
+### NavMesh Pathfinding
+
+<img width="1113" height="516" alt="image" src="https://github.com/user-attachments/assets/757b4aa5-e97c-4463-95aa-9d0830b97fc2" />
+
+Instead of orbit rotation, The vehicle rotates around the circular path.
+This should be different from previous approach: where rotation can be defined mathematically
+The path can be ellipse, curved, or an arbitary spline.
+Therefore, another approach which can be applied to all kinds of path was required
+At the moment, I deciede to use the path as a pivot point where agent can patroll.
+
+> 기존의 탈것 회전 아이디어가 길 위를 따라 회전하는 것으로 변경되었습니다.
+> 이 길은 구불구불하거나, 타원 형태가 될 수도 있기 때문에 기존의 수학적인 경로는 사용할 수가 없었습니다.
+> 그래서 UnityAI 라이브러리에 있는 NavMeshSurface를 이용해서, Agent가 경로를 찾을 수 있는 surface를 정의했습니다.
+
+```
+//C#
+Start()
+{
+    for (let i = 0; i < this.way.transform.childCount; i++)
+    {
+        waypoints.push(this.way.transform.GetChild(i));
+    }
+    console.log("set dest");
+    agent = this.GetComponent<NavMeshAgent>();
+
+    this.UpdateDestination();
+}
+```
+
+Start method initializes waypoints, which is used for the pivots of the agent path.
+the pivot is defined by list of vectors which are the children of this object.
+
+> Start 함수는 Agent의 Path에 사용될 waypoint를 정의합니다.
+> path의 각 지점마다 child pivot을 지정해서, 이 오브젝트의 children으로 만들어놓았습니다.
+
+```
+//C#
+Update()
+{
+    if (Vector3.Distance(this.transform.position, target) < 5)
+    {
+        console.log("move");
+        this.IterateWaypointIndex();
+        this.UpdateDestination();
+    }
+}
+
+UpdateDestination()
+{
+    target = waypoints[waypointIndex].position;
+    agent.SetDestination(target);
+}
+
+IterateWayPointIndex()
+{
+    waypointIndex++;
+    if (waypointIndex == waypoints.length)
+    {
+        waypointIndex = 0;
+    }
+}
+
+```
+
+Update method keeps calculating the distance between our vehicle and next target position.
+if the vehicle gets close enough to the target waypoints,
+the waypoint is updated to next one.
+This makes the vehicle to move along the path.
+
+> 업데이트 함수는 탈것과 타겟까지의 거리를 계속해서 계산합니다.
+> 만약 거리가 충분히 가까워지면, 탈것의 타겟을 다음 waypoint로 변경해서
+> 탈것이 waypoint를 따라 천천히 순회하도록 만듭니다.
+
+- Result
+
+https://github.com/user-attachments/assets/3ba29780-2358-42a9-b813-ef52dba07eea
+
+Raining and Smoke effect are also added for more details, using Particle System.
+
+> 유니티 파티클 시스템을 활용해 비 내리는 효과와 매연 효과를 추가해서, 더욱 재미있게 연출했습니다.
 
