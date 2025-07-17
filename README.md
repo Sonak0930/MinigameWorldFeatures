@@ -10,8 +10,8 @@ The files are attached from the project.
 >
 
 [text](#ranking-system)
-
-[text](##navmesh-pathfinding)
+[text](#orbit-rotation)
+[text](#navmesh-pathfinding)
 
 ## Ranking System
 
