@@ -11,9 +11,13 @@ The files are attached from the project.
 
 # Overview
 [1.Ranking System](#ranking-system)
+
 [2.Pathfinding](#path-finding)
+
 [3.Birdview Camera](#birdview-camera)
+
 [4.Teleportation Synchronization](#teleportation-synchronization)
+
 [5.Boat Buoyancy Simulation](#boat-buoyancy-simulation)
 
 ## Ranking System
@@ -74,7 +78,7 @@ https://github.com/user-attachments/assets/105ee38d-9af5-48c6-b095-eee0c950591d
 
 <br></br>
 
-## Pathfinding 
+## Path finding 
 
 ### Orbit Rotation
 
