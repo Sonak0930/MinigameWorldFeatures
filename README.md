@@ -32,7 +32,7 @@ and displayed them on the UI.
 [Zepeto Studio: Searching Ranking Details](https://studio.zepeto.me/guides/searching-ranking-details)
 
 ```
-//typescript
+//C# based script(ZepetoScript)
 
 LeaderboardAPI.GetRangeRank(this.leaderboardID,this.startRank,this.endRank,this.resetRule,false
 ((result:GetRangeRankResponse)->{
@@ -292,6 +292,8 @@ OnTriggerEnter(coll:Collider)
 }
 ```
 
+### Trigger Box code 
+
 This is the code to move the local Player, which is visible on the client side.
 There is no problem, but when another player joins, he might not see you teleport. 
 Rather, your character is stuck in that position, or suddenly starts to run to the teleport destination.
@@ -334,6 +336,8 @@ public customTeleport(p:UnityEngine.Vector3, r:UnityEngine.Quaternion)
     }
 }
 ```
+
+### ClientStarter for teleportation
 
 CustomTeleport has two roles.
 - Generate Room Data for position and rotation.
@@ -390,6 +394,8 @@ this.multiplay.RoomJoined += (room:Room)=>
     });
 };
 ```
+
+### Client Starter: RoomJoined Event
 
 RoomJoined Event is registered to the local player when the player first joins the room(Server).
 The room got handler for "ChangePlayerTransform" that is called when the server broadcasts that packet.
@@ -459,6 +465,8 @@ this.onMessage("onTeleport", (client, message) =>
 });
 ```
 
+### Index.server code
+
 Index.server is a server code that broadcasts the packets to all clients.
 This means changes to the packet information are applied to all of the local players.
 It is crucial to update the local player position when teleportation, to synchronize the local player's transform and
@@ -467,3 +475,106 @@ Server Player Transform.
 > Index.server파일은 모든 클라이언트들에게 패킷을 보내는(broadcast)역할을 합니다.
 > 이 과정을 통해 서버에 저장된 해당 플레이어 정보가 다른 로컬 플레이어들에게도 동일하게 전달이 됩니다.
 > 만약 server player와 local player가 다르다면, 두 플레이어가 서로 바라본 위치가 다르게 되고, 멀티플레이에 지장이 생기게 됩니다.
+
+
+<img width="404" height="409" alt="image" src="https://github.com/user-attachments/assets/68560d2c-bbd6-463d-bd78-ddbe4b7e88dc" />
+
+### Schema settings for packet data type
+
+This schema defines the input type for the packet.
+
+> 이 스키마를 통해 패킷에 사용될 인풋 타입을 지정할 수 있습니다.
+
+## Boat Buoyancy Simulation
+
+<img width="749" height="235" alt="image" src="https://github.com/user-attachments/assets/f1e7aa0f-82a1-4ef5-8fb8-f9b5fb87f40b" />
+
+A custom boat that the player can control, and it fluctuates when it is dropped from a high point.
+
+> 커스텀 보트를 구현해 사용자가 조이스틱으로 움직일 수 있게 만들었습니다.
+> 높이차를 계산해서 높은 곳에서 떨어질 경우 물에 잠겼다가 출렁입니다.
+
+```
+
+Update()
+{
+    //Calculate the height of the boat compared to the previous position.
+    //this.transform.position.y: current boat height
+    //this.boatHeight = previous height
+    this.CalculateHeight();
+    var gravity;
+
+    //CASE1: Boat is going downward by gravity.
+    if (this.transform.position.y < this.boatHeight)
+    {
+        
+        var displacementMultiplier = Mathf.Clamp(
+            (this.boatHeight - this.transform.position.y) / this.depthBeforeSubmerged, 0, 1)
+            * this.displacementAmount;
+
+        gravity = new Vector3(0, Mathf.Abs(Physics.gravity.y) * displacementMultiplier, 0);
+
+        this.rigidBody.AddForce(gravity, ForceMode.Acceleration);
+    }
+
+    //CASE2: Boat is going upward compared to the previous position.
+    else
+    {
+        var dispalcementMultiplier = Mathf.Clamp(
+            (this.boatHeight - this.transform.position.y) / this.depthBeforeSubmerged, 0, 1)
+            * this.displacementAmount;
+
+        //gravity is not applied.
+    }
+}
+```
+
+### Calculate Boat Height
+
+Gravity Behaviour is determined the difference between the current height and previous one.
+- height
+- below the water -> Add 'upper directional force' to the object to offset the gravity force.
+
+> 보트의 중력은 크게 두 가지 방식으로 처리됩니다.
+> - 물보다 높은 위치에 보트가 있다 -> 기존 중력만 사용
+> - 수면 밑에 잠긴 상태 -> 위쪽 방향의 힘을 더해 기존 중력을 상쇄하고, 위로 밀어올림.
+
+The interesting point is that the magnitude of the force depends on the distance between the surface and the boat.
+Usually, when the boat becomes closer to the surface, the force becomes weaker.
+The height of the fluctuation decreases over time.
+
+> 특이점은 보트가 수면에 가까워질수록, 이 힘의 크기가 줄어든다는 것입니다.
+> 그래서 시간이 지나면 보트가 위 아래로 진동하다가 진폭이 점점 줄어듭니다.
+
+```
+CalculateHeight()
+{
+    if (this.raycastPivot == null)
+    {
+        //WARNING: NOT RELIABLE CODE
+        this.raycastPivot = this.vehicle.transform.GetChild(2).gameObject;
+    }
+
+    //DebugRay
+    Debug.DrawRay(this.raycastPivot.transform.positioon, Vector3.down);
+    
+    //Raycast to the surface
+    let hit = $ref<RaycastHit>();
+    if (Physics.Raycast(this.raycastPivot.transform.position, Vector3.down, hit, 10))
+    {
+        let hitInfo =$unref(hit);
+        var obj = hitInfo.collider.gameObject;
+        if (obj.tag == "Wave")
+        {
+            this.SetBoatHeight(obj.transform.position.y);
+        }
+    }
+}
+```
+
+### Raycasting from the bottom of the boat to the water surface.
+
+It displays debug rays to visualize the direction of the raycasting.
+Raycasting only works for the mesh filter objecet which is tagged "Wave"
+
+> 보트의 바닥면에서 아래 방향으로 
