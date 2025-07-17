@@ -275,6 +275,9 @@ to describe this issue in detail.
 > 동기화 문제에 대한 구체적인 솔루션이나 공식 문서가 없었기 때문에, 꽤나 애를 먹었습니다.
 
 ```
+//Trigger Code
+// This code is attached to the trigger box for teleportation.
+
 OnTriggerEnter(coll:Collider)
 {
     ZepetoPlayers.instance.LocalPlayer.zepetoPlayer.character.Teleport(
@@ -299,6 +302,7 @@ Rather, your character is stuck in that position, or suddenly starts to run to t
 > 갑자기 텔레포트 방향으로 뛰어가는 문제가 있었습니다.
 
 ```
+//ClientStarter
 public customTeleport(p:UnityEngine.Vector3, r:UnityEngine.Quaternion)
 {
     //when this room object is not null
@@ -342,5 +346,124 @@ I omitted w (rotation angle in radians) when initialization of the rot.
 > - 해당 데이터 패킷을 서버에 보내기.
 > 작성하다보니 w를 빼먹었는데, quaternion은 x,y,z,w 4개 parameter를 가지고 있습니다.
 > 그중에 w는 rotation angle(라디안)을 나타냅니다.
+```
+//Client Starter
+this.multiplay.RoomJoined += (room:Room)=>
+{
+    room.OnStateChange += this.OnStateChange;
+    room.AddMessageHandler("ChangePlayerTransform",(message:Transform)=>
+    {
+        var global = ZepetoPlayer.instance.GetPlayer(message.clientid).character;
+        var local = ZepetoPlayer.instance.LocalPlayer.ZepetoPlayer.character;
+
+        //WARNING: NOT VERIFIED CODE
+        var pos = this.ParseVector3(message.position);
+        var rot = 
+            new UnityEngine.Quaternion(message.rotation.x,
+            message.rotation.y,
+            message.rotation.z,
+            1);
+        /*
+        var rot = this.ParseVector3(message.position),
+            new UnityEngine.Quaternion(message.rotation.x,
+            message.rotation.y,
+            message.rotation.z,
+            message.rotation.w);
+        */    
+        global.Teleport(pos,rot);
+        global.transform.SetPositionAndRotation(pos,rot);
 
 
+        local.Teleport(global.transform.position, global.transform.rotation);
+        
+        //WARNING: NOT RELIABLE CODE
+        if (UnityEngine.Vector3.op_Eqaulity(global.transform.position, local.transform.position))
+        {
+            local.Teleport(global.transform.position, global.transform.rotation);
+        }
+        
+        /*
+        Instead of using Equality function, Calculate the min distance between Global and Local position.
+        When local is within the distance, perform teleportation.
+        
+        */
+    });
+};
+```
+
+RoomJoined Event is registered to the local player when the player first joins the room(Server).
+The room got handler for "ChangePlayerTransform" that is called when the server broadcasts that packet.
+The process of broadcasting is described below.
+
+> RoomJoined 이벤트는 플레이어가 게임에 접속하면 호출됩니다.
+> 해당 이벤트를 통해 플레이어가 접속했을때 특정 기능을 실행할 수 있습니다.
+> RoomJoined 이벤트에서는 플레이어 접속시 ChangePlayerTransform에 대한 Handler를 부여합니다.
+> 그러면 서버가 해당 이름의 패킷을 발송했을 때 캐치를 해서 이벤트를 수행할 수 있습니다.
+> 서버 브로드캐스팅 과정은 아래의 Index.server 코드에 명시되어 있습니다.
+ 
+When the packet is received, it gets a reference to the Global and Local players.
+Then it extracts the position and rotation from the message.
+They are applied to the Teleport function.
+
+> 패킷이 도착하면 가장 먼저 Global Player와 Local Player reference를 생성합니다.
+> 그리고 패킷에 있는 position과 rotation 정보를 추출하고, 이를 바탕으로 Teleportation을 수행합니다.
+
+Teleportation happens a third time.
+- First: Global Character is teleported.
+- Second: Local Player is teleported
+- Compare the Global and local positions and match their positions.
+
+> 텔레포트는 사실 3번에 걸쳐 일어납니다.
+> - 1번째: 글로벌 캐릭터를 텔레포트 합니다.
+> - 2번째: 로컬 플레이어를 텔레포트 합니다.
+> - 3번째: 글로벌과 로컬 플레이어의 포지션을 비교해 로컬플레이어 포지션을 업데이트 합니다.
+
+```
+//Index
+//This handler is in ServerSide.
+this.onMessage("onTeleport", (client, message) =>
+{
+    //query player data based on the sessionId
+    const player = this.state.players.get(client.sessionId);
+
+    //Generate a container to hold pos and rot
+    const transform = new Transform();
+    transform.position = new Vector3(
+        message.position.x,
+        message.position.y,
+        message.position.z
+    );
+
+    //WARNING: NOT_VERIFIED
+    //transform.rotation might be quaternion not a EulerAngle.
+    transform.rotation = new Vector3(
+        message.rotation.x,
+        message.rotation.y,
+        message.rotation.z
+    );
+
+    /*
+    transform.rotation = new Quaternion(
+        message.rotation.x,
+        message.rotation.y,
+        message.rotation.z,
+        message.rotation.w
+    );
+    */
+
+    //Update the server player based on the sessionID of the client.
+    transform.clientId = client.sessionId;
+    plater.transform = transform;
+
+    //Broadcast ChangePlayerTransform packet to all players in the server.
+});
+```
+
+Index.server is a server code that broadcasts the packets to all clients.
+This means changes to the packet information are applied to all of the local players.
+It is crucial to update the local player position when teleportation, to synchronize the local player's transform and
+Server Player Transform.
+
+> Index.server파일은 모든 클라이언트들에게 패킷을 보내는(broadcast)역할을 합니다.
+> 이 과정을 통해 서버에 저장된 해당 플레이어 정보가 다른 로컬 플레이어들에게도 동일하게 전달이 됩니다.
+> 만약 server player와 local player가 다르다면, 두 플레이어가 서로 바라본 위치가 다르게 되고, 멀티플레이에 지장이 생기게 됩니다.
