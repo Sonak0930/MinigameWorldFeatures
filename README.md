@@ -498,13 +498,13 @@ A custom boat that the player can control, and it fluctuates when it is dropped 
 
 Update()
 {
-    //Calculate the height of the boat compared to the previous position.
+    //Calculate the height of the boat compared to the surface height
     //this.transform.position.y: current boat height
-    //this.boatHeight = previous height
+    //this.boatHeight = surface height
     this.CalculateHeight();
     var gravity;
 
-    //CASE1: Boat is going downward by gravity.
+    //CASE1: Boat is below the surface-> going upward
     if (this.transform.position.y < this.boatHeight)
     {
         
@@ -517,7 +517,7 @@ Update()
         this.rigidBody.AddForce(gravity, ForceMode.Acceleration);
     }
 
-    //CASE2: Boat is going upward compared to the previous position.
+    //CASE2: Boat is above the surface-> going down(no additional force)
     else
     {
         var dispalcementMultiplier = Mathf.Clamp(
@@ -531,13 +531,16 @@ Update()
 
 ### Calculate Boat Height
 
-Gravity Behaviour is determined the difference between the current height and previous one.
-- height
-- below the water -> Add 'upper directional force' to the object to offset the gravity force.
 
-> 보트의 중력은 크게 두 가지 방식으로 처리됩니다.
-> - 물보다 높은 위치에 보트가 있다 -> 기존 중력만 사용
-> - 수면 밑에 잠긴 상태 -> 위쪽 방향의 힘을 더해 기존 중력을 상쇄하고, 위로 밀어올림.
+Gravity Behaviour is determined by the difference between the current boat height and the surface height
+- boatHeight(Surface Height) > transform.y(boat y-coordinates) -> The boat is floating
+- boatHeight(Surface Height) < transform.y(boat y-coordinates) -> The boat is submerging.
+  
+<img width="623" height="399" alt="image" src="https://github.com/user-attachments/assets/196f7aa9-1279-48a4-9f30-71eb31956992" />
+
+> 보트의 중력은 수면과 보트의 위치를 비교해 결정됩니다.
+> - 보트가 수면 아래에 있다 -> 보트가 위로 올라감
+> - 보트가 수면 위에 있다 -> 보트가 내려감 (추가적인 힘 필요 없음.)
 
 The interesting point is that the magnitude of the force depends on the distance between the surface and the boat.
 Usually, when the boat becomes closer to the surface, the force becomes weaker.
@@ -575,6 +578,11 @@ CalculateHeight()
 ### Raycasting from the bottom of the boat to the water surface.
 
 It displays debug rays to visualize the direction of the raycasting.
-Raycasting only works for the mesh filter objecet which is tagged "Wave"
+Raycasting only works for the mesh filter object, which is tagged "Wave"
 
-> 보트의 바닥면에서 아래 방향으로 
+> 보트의 바닥면에서 아래 방향으로 debug ray를 그립니다.
+> 이를 통해 플레이어는 게임모드에서 레이 캐스팅을 확인할 수 있습니다.
+> 바닥면은 반드시 wave tag가 되어있어야 하며, mesh filter가 있어야 raycasting으로 찾을 수 있습니다.
+
+
+
