@@ -9,9 +9,12 @@ The files are attached from the project.
 > 대신에 프로젝트에 사용했던 개발 문서와 사진, 영상자료를 첨부했습니다.
 >
 
-[text](#ranking-system)
-[text](#orbit-rotation)
-[text](#navmesh-pathfinding)
+# Overview
+[1.Ranking System](#ranking-system)
+[2.Pathfinding](#path-finding)
+[3.Birdview Camera](#birdview-camera)
+[4.Teleportation Synchronization](#teleportation-synchronization)
+[5.Boat Buoyancy Simulation](#boat-buoyancy-simulation)
 
 ## Ranking System
 
@@ -67,10 +70,11 @@ result info is printed on the console and used for later to display them on UI s
 https://github.com/user-attachments/assets/105ee38d-9af5-48c6-b095-eee0c950591d
 
 
+[Back to overview](#overview)
 
 <br></br>
 
-## Pathfinding using Unity AI: NavMeshAgent
+## Pathfinding 
 
 ### Orbit Rotation
 
@@ -175,8 +179,9 @@ Raining and Smoke effect are also added for more details, using Particle System.
 
 > 유니티 파티클 시스템을 활용해 비 내리는 효과와 매연 효과를 추가해서, 더욱 재미있게 연출했습니다.
 
+[Back to overview](#overview)
 
-## Exploring the whole map with bird-view camera
+## Birdview Camera
 
 <img width="640" height="406" alt="image" src="https://github.com/user-attachments/assets/dc8226e2-1226-4564-b799-c9ccc02817d7" />
 
@@ -267,6 +272,7 @@ Camera shows more smooth transition for position and rotation.
 > - Slerp를 사용한 경우
 > 훨씬 더 부드러운 곡선 경로를 그리는 것을 볼 수 있습니다.
 
+[Back to overview](#overview)
 
 ## Teleportation Synchronization
 
@@ -488,6 +494,8 @@ This schema defines the input type for the packet.
 
 > 이 스키마를 통해 패킷에 사용될 인풋 타입을 지정할 수 있습니다.
 
+[Back to overview](#overview)
+
 ## Boat Buoyancy Simulation
 
 <img width="749" height="235" alt="image" src="https://github.com/user-attachments/assets/f1e7aa0f-82a1-4ef5-8fb8-f9b5fb87f40b" />
@@ -587,5 +595,6 @@ Raycasting only works for the mesh filter object, which is tagged "Wave"
 > 이를 통해 플레이어는 게임모드에서 레이 캐스팅을 확인할 수 있습니다.
 > 바닥면은 반드시 wave tag가 되어있어야 하며, mesh filter가 있어야 raycasting으로 찾을 수 있습니다.
 
+[Back to overview](#overview)
 
 
