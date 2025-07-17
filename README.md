@@ -10,7 +10,7 @@ The files are attached from the project.
 >
 
 [text](#ranking-system)
-[text](###orbit-rotation)
+[text](##orbit-rotation)
 ## Ranking System
 
 <img width="342" height="372" alt="image" src="https://github.com/user-attachments/assets/f0ced3a9-d480-4cf4-9a2f-de199f45e8d7" />
