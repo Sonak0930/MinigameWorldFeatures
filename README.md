@@ -263,3 +263,84 @@ Camera shows more smooth transition for position and rotation.
 
 > - Slerp를 사용한 경우
 > 훨씬 더 부드러운 곡선 경로를 그리는 것을 볼 수 있습니다.
+
+
+## Teleportation Synchronization
+
+This was the most challenging part, which I spent the majority of my time.
+I have tested this feature over and over again, because there was no appropriate solution or official documentation
+to describe this issue in detail.
+
+> 텔레포트 동기화는 제가 가장 많은 시간을 투자한 기능입니다.
+> 동기화 문제에 대한 구체적인 솔루션이나 공식 문서가 없었기 때문에, 꽤나 애를 먹었습니다.
+
+```
+OnTriggerEnter(coll:Collider)
+{
+    ZepetoPlayers.instance.LocalPlayer.zepetoPlayer.character.Teleport(
+        pivot.transform.position,
+        pivot.transform.rotation
+    );
+
+    //Custom script for teleport
+    //this method generates position and rotation data
+    //and send it to the server for synchronization.
+    cs.customTeleport(pivot.transform.position, pivot.transform.rotation)
+}
+```
+
+This is the code to move the local Player, which is visible on the client side.
+There is no problem, but when another player joins, he might not see you teleport. 
+Rather, your character is stuck in that position, or suddenly starts to run to the teleport destination.
+
+> 이 코드는 Local Player를 텔레포트하는 함수입니다.
+> Local Player는 Client, 내 화면에서 보이는 캐릭터를 지칭합니다.
+> 내가 보기에는 정상적으로 이동하지만, 다른 캐릭터가 나를 봤을 때는 내 캐릭터가 움직이지 않거나,
+> 갑자기 텔레포트 방향으로 뛰어가는 문제가 있었습니다.
+
+```
+public customTeleport(p:UnityEngine.Vector3, r:UnityEngine.Quaternion)
+{
+    //when this room object is not null
+    //room is created when player joins in the game.
+    if (this.room)
+    {
+        //Initialize room position data
+        const data = new RoomData();
+        const pos = new RoomData();
+
+        pos.Add("x", p.x);
+        pos.Add("y", p.y);
+        pos.Add("z", p.z);
+
+        data.Add("position", pos.GetObject());
+
+
+        const rot = new RoomData();
+        rot.Add("x", r.x);
+        rot.Add("y", r.y);
+        rot.Add("z", r.z);
+
+        //WARNING_NOT_VERIFIED
+        //rot.Add("w",r.z);
+        data.Add("rotation",rot.GetObject());
+
+        //Send Packet to the server
+        this.room.Send("onTeleport", data.GetObject());
+    }
+}
+```
+
+CustomTeleport has two roles.
+- Generate Room Data for position and rotation.
+- Send the packet with the room data.
+
+I omitted w (rotation angle in radians) when initialization of the rot.
+
+> CustomTeleport의 기능은 다음과 같습니다.
+> - 위치와 쿼터니언 기반 Room Data 생성
+> - 해당 데이터 패킷을 서버에 보내기.
+> 작성하다보니 w를 빼먹었는데, quaternion은 x,y,z,w 4개 parameter를 가지고 있습니다.
+> 그중에 w는 rotation angle(라디안)을 나타냅니다.
+
+
