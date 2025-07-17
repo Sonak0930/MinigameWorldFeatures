@@ -9,7 +9,7 @@ The files are attached from the project.
 > 대신에 프로젝트에 사용했던 개발 문서와 사진, 영상자료를 첨부했습니다.
 >
 
-[text](##orbit-rotation)
+[text](#ranking-system)
 
 ## Ranking System
 
