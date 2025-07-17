@@ -9,7 +9,7 @@ The files are attached from the project.
 > 대신에 프로젝트에 사용했던 개발 문서와 사진, 영상자료를 첨부했습니다.
 >
 
-[Ranking System](###Orbit-Rotation)
+[Ranking System](###Orbit_Rotation)
 
 ## Ranking System
 
@@ -70,7 +70,7 @@ https://github.com/user-attachments/assets/105ee38d-9af5-48c6-b095-eee0c950591d
 
 ## Pathfinding using Unity AI: NavMeshAgent
 
-### Orbit-Rotation
+### Orbit Rotation
 
 There was a requirement for the vehicle which orbits around the center of the map with some distance.
 It required to consideration:
